@@ -5,11 +5,14 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import json
 import os
+import random
 
 class NaverBlogScraper:
     TITLE_LIST_SELECTOR = "div.pcol1"  # 글 목록에서 제목 span
     POST_CONTENT_SELECTOR = "div.se-main-container"  # 글 상세에서 본문
-    PAGE_LOAD_WAIT = 2
+    DATE_SELECTOR = "span.se_publishDate.pcol2"
+    PAGE_LOAD_WAIT_MIN = 0.2
+    PAGE_LOAD_WAIT_MAX = 0.7
 
     def __init__(self, blog_id, output_dir="raw_content"):
         self.blog_id = blog_id
@@ -20,15 +23,19 @@ class NaverBlogScraper:
         list_url = f"https://blog.naver.com/PostList.naver?from=postList&blogId={self.blog_id}&categoryNo={category_no}&currentPage={page}"
         print(f"[페이지 이동] {list_url}")
         self.driver.get(list_url)
-        time.sleep(self.PAGE_LOAD_WAIT)
+        time.sleep(random.uniform(self.PAGE_LOAD_WAIT_MIN, self.PAGE_LOAD_WAIT_MAX))
         titles = self.driver.find_elements(By.CSS_SELECTOR, self.TITLE_LIST_SELECTOR)
         contents = self.driver.find_elements(By.CSS_SELECTOR, self.POST_CONTENT_SELECTOR)
-        print(f"[디버그] 추출된 제목 개수: {len(titles)}, 본문 개수: {len(contents)}")
+        dates = self.driver.find_elements(By.CSS_SELECTOR, self.DATE_SELECTOR)
+        print(f"[디버그] 추출된 제목 개수: {len(titles)}, 본문 개수: {len(contents)}, 날짜 개수: {len(dates)}")
         posts = []
-        for title_elem, content_elem in zip(titles, contents):
+        for title_elem, content_elem, date_elem in zip(titles, contents, dates):
             title = title_elem.text.strip()
             content = content_elem.text.strip()
-            posts.append({"title": title, "content": content})
+            date_full = date_elem.text.strip()
+            date_parts = date_full.split() if date_full else []
+            date = " ".join(date_parts[:3]) if len(date_parts) >= 3 else ""
+            posts.append({"title": title, "date": date, "content": content})
         return posts
 
     def save_posts(self, posts, batch_name):
@@ -69,8 +76,8 @@ class NaverBlogScraper:
 
 if __name__ == "__main__":
     # 아래 부분만 본인 계정명으로 바꿔서 사용하면 됩니다.
-    blog_id = "your_blog_id_here"  # 네이버 블로그 계정명(예: skykum2004)
-    output_dir = "raw_content"
+    blog_id = "skykum2004"  # 네이버 블로그 계정명(예: skykum2004)
+    output_dir = "raw_content_date"
     category_no = 6
     scraper = NaverBlogScraper(blog_id, output_dir)
     scraper.scrape_blog(max_pages=143, category_no=category_no, delay=1)

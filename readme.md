@@ -48,6 +48,17 @@ scraper.close()
 
 - `output_dir` 폴더에 `batch_1_posts.json`, `batch_2_posts.json` 등으로 저장됩니다.
 - 각 파일에는 최대 `batch_size`개의 글이 포함됩니다.
+- 저장 형태 : 
+```json
+[
+    {
+        "title": "제목",
+        "date": "날짜",
+        "content": "내용"
+    },
+    ...
+]
+```
 
 ## 참고 사항
 
